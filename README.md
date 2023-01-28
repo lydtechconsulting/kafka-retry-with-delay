@@ -10,6 +10,17 @@ The pattern allows a delay to be configured so that the events are not being con
 
 For example, as this application demonstrates, an item is created with a create-item event, and updated with an update-item event.  If the update-item event is received before the create-item event it may be required to delay and retry this update after a period of time to allow for the corresponding create-item event to arrive and be processed.  When related events are originating in bulk from external systems it may well be the case that such events arrive out of order by the time they hit a downstream service.  This pattern therefore caters for such a scenario as the update-item event can be safely retried until the item is eventually created by the create-item event, at which point the update can be applied.
 
+The retry logic is generic and works with any event.  As such it is encapsulated in its own library, `messaging-retry`.  Adding this dependency to a project to enable application of this delayed non-blocking retry pattern.  If it is determined that the event should be retried, then place on the `retry-message` topic, with the following headers configured:
+
+|Header|Value|
+|---|---|
+|messaging.retry.lib.MessagingRetryHeaders.ORIGINAL_RECEIVED_TIMESTAMP|This is the original received timestamp of the event, taken from the `org.springframework.kafka.support.KafkaHeaders.RECEIVED_TIMESTAMP` header.|
+|messaging.retry.lib.MessagingRetryHeaders.ORIGINAL_TOPIC|The original topic name of the message.  When the message is ready to retry, this is the topic that the message will be placed on.|
+
+The consumer on the original topic for the event that needs to be retried therefore needs to pass on the `ORIGINAL_RECEIVED_TIMESTAMP` header to the retry topic if it is set, and if it is not set then set this header to the event's `KafkaHeaders.RECEIVED_TIMESTAMP`.  (`KafkaHeaders.RECEIVED_TIMESTAMP` is always set on an event when written by a Spring producer).   When the retry handler writes the event back to the original topic, it will include the `MessagingRetryHeaders.ORIGINAL_RECEIVED_TIMESTAMP` header.
+
+Events that are retried will therefore potentially be applied out of order.  For example, if two `update-item` events are received before the corresponding `create-item` event, with one transitioning the item to status `ACTIVE` and the second transitioning the item to `CANCELLED`, as these events are retried they will be applied in a non-deterministic order.  This may be contrary to the requirements of the system. 
+
 ## Configuration
 
 Configure the following properties in `src/main/resources/application.yml`:
@@ -26,7 +37,7 @@ mvn clean install
 
 ## Integration Tests
 
-The integration tests run as part of the maven `test` target (during the `install`).
+The integration tests run as part of the maven `test` target (which is part of the `install`).
 
 Configuration for the test is taken from the `src/test/resoures/application-test.yml`.
 
@@ -43,10 +54,10 @@ docker-compose up -d
 
 ### Start demo spring boot application
 ```
-java -jar target/kafka-retry-with-delay-1.0.0.jar
+java -jar demo-service/target/kafka-retry-with-delay-1.0.0.jar
 ```
 
-### Produce create and update item command events:
+### Produce create and update item command events
 
 Jump onto Kafka docker container:
 ```
@@ -86,7 +97,7 @@ Retrieve the updated item status via the REST API, confirming it is now `ACTIVE`
 curl -X GET http://localhost:9001/v1/demo/items/626bd1bd-c565-48ac-87b2-28f2247f6dea/status
 ```
 
-### Exercise the retry with out of order events:
+### Exercise the retry with out of order events
 
 Submit an `update-item` first (with a different UUID, and status of `ACTIVE` or `CANCELLED`).  Observe that no item status is returned from the `curl` statement.  If a `create-item` event with this same itemId is submitted before the `maxRetryDurationSeconds` threshold is exceeded (as defined in `application.yml`), then the item will be created, and the retrying `update-item` event will transition the status to `ACTIVE` or `CANCELLED`.  If the threshold is exceeded then the status of the created item will remain at `NEW`.
 
