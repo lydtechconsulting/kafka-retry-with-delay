@@ -2,7 +2,7 @@
 
 Spring Boot application demonstrating usage of a pattern for Kafka consumer retry with non-blocking delay.
 
-If an event is received by an application that is not ready to processit , it can be sent to a retry topic that will evaluate whether and when the event can be retried.
+If an event is received by an application that is not ready to process it, it can be sent to a retry topic that will evaluate whether and when the event can be retried.
 
 By passing the event off to a retry topic it means that other events on the same topic that potentially could be processed are not blocked.  If the event were to be repeatedly retried off the original topic then that blocks the events behind it.
 
