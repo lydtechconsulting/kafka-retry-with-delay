@@ -10,3 +10,8 @@ spring:
         hibernate:
             ddl-auto: none
             show_sql: true
+
+demo:
+    retry:
+        retryIntervalSeconds: 3
+        maxRetryDurationSeconds: 10

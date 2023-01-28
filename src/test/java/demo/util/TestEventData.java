@@ -15,7 +15,7 @@ public class TestEventData {
                 .build();
     }
 
-    public static UpdateItem buildUpdateItemEvent(UUID id, String status) {
+    public static UpdateItem buildUpdateItemEvent(UUID id, ItemStatus status) {
         return UpdateItem.builder()
                 .id(id)
                 .status(status)

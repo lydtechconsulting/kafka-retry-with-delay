@@ -3,6 +3,9 @@ spring:
         name: retry-with-delay-demo
     datasource:
         driverClassName: org.postgresql.Driver
+        url: jdbc:postgresql://localhost:5432/postgres
+        username: postgres
+        password: postgres
     jpa:
         database-platform: org.hibernate.dialect.PostgreSQLDialect
         properties:
@@ -24,4 +27,10 @@ kafka:
     bootstrap-servers: localhost:9092
 
 demo:
-    itemRetryTopic : "item-retry"
+    topics:
+        itemCreateTopic: "create-item"
+        itemUpdateTopic: "update-item"
+        retryTopic: "retry"
+    retry:
+        retryIntervalSeconds: 10
+        maxRetryDurationSeconds: 300

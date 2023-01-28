@@ -20,6 +20,8 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.listener.SeekToCurrentErrorHandler;
+import org.springframework.util.backoff.FixedBackOff;
 
 @Slf4j
 @EntityScan("demo.domain")
@@ -36,6 +38,18 @@ public class DemoConfiguration {
     }
 
     @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerRetryContainerFactory(final ConsumerFactory<String, String> consumerFactory) {
+        final SeekToCurrentErrorHandler errorHandler = new SeekToCurrentErrorHandler((record, exception) -> {
+            // 1 second pause, unlimited retries - allow the discard logic to deal with the limit.
+        }, new FixedBackOff(1000L, FixedBackOff.UNLIMITED_ATTEMPTS));
+
+        final ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory();
+        factory.setConsumerFactory(consumerFactory);
+        factory.setErrorHandler(errorHandler);
+        return factory;
+    }
+
+    @Bean
     public KafkaTemplate<String, String> kafkaTemplate(final ProducerFactory<String, String> producerFactory) {
         return new KafkaTemplate<>(producerFactory);
     }
@@ -46,6 +60,7 @@ public class DemoConfiguration {
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        config.put(ConsumerConfig.GROUP_ID_CONFIG, "demo");
         return new DefaultKafkaConsumerFactory<>(config);
     }
 

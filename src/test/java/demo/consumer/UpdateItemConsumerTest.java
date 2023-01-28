@@ -30,12 +30,12 @@ public class UpdateItemConsumerTest {
      */
     @Test
     public void testListen_Success() {
-        UpdateItem testEvent = TestEventData.buildUpdateItemEvent(randomUUID(), ItemStatus.ACTIVE.toString());
+        UpdateItem testEvent = TestEventData.buildUpdateItemEvent(randomUUID(), ItemStatus.ACTIVE);
         String payload = JsonMapper.writeToJson(testEvent);
 
-        consumer.listen(payload);
+        consumer.listen(payload, 1L, 1L);
 
-        verify(serviceMock, times(1)).updateItem(testEvent);
+        verify(serviceMock, times(1)).updateItem(testEvent, 1L, 1L);
     }
 
     /**
@@ -45,13 +45,13 @@ public class UpdateItemConsumerTest {
      */
     @Test
     public void testListen_ServiceThrowsException() {
-        UpdateItem testEvent = TestEventData.buildUpdateItemEvent(randomUUID(), ItemStatus.ACTIVE.toString());
+        UpdateItem testEvent = TestEventData.buildUpdateItemEvent(randomUUID(), ItemStatus.ACTIVE);
         String payload = JsonMapper.writeToJson(testEvent);
 
-        doThrow(new RuntimeException("Service failure")).when(serviceMock).updateItem(testEvent);
+        doThrow(new RuntimeException("Service failure")).when(serviceMock).updateItem(testEvent, 1L, 1L);
 
-        consumer.listen(payload);
+        consumer.listen(payload, 1L, 1L);
 
-        verify(serviceMock, times(1)).updateItem(testEvent);
+        verify(serviceMock, times(1)).updateItem(testEvent, 1L, 1L);
     }
 }

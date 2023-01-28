@@ -1,5 +1,6 @@
 package demo.properties;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import lombok.Getter;
@@ -14,5 +15,15 @@ import org.springframework.validation.annotation.Validated;
 @Setter
 @Validated
 public class DemoProperties {
-    @NotNull private String itemRetryTopic;
+
+    private @NotNull @Valid Topics topics;
+
+    @Getter
+    @Setter
+    public static class Topics {
+        @NotNull
+        private String itemUpdateTopic;
+        @NotNull
+        private String retryTopic;
+    }
 }

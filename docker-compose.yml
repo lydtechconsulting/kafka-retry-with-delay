@@ -29,18 +29,16 @@ services:
             KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
             KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR:
 
-    control-center:
-        image: confluentinc/cp-enterprise-control-center:7.2.1
-        hostname: control-center
-        container_name: control-center
-        depends_on:
-            - kafka
-        ports:
-            - "9021:9021"
+    postgres:
+        container_name: postgres
+        image: postgres:14.1-alpine
+        restart: always
         environment:
-            CONTROL_CENTER_BOOTSTRAP_SERVERS: 'kafka:29092'
-            CONTROL_CENTER_REPLICATION_FACTOR: 1
-            CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
-            CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
-            CONFLUENT_METRICS_TOPIC_REPLICATION: 1
-            PORT: 9021
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=postgres
+        ports:
+            - '5432:5432'
+        volumes:
+            - postgres:/var/lib/postgresql/data
+volumes:
+    postgres: {}

@@ -6,6 +6,8 @@ import java.util.UUID;
 import demo.domain.Item;
 import demo.event.CreateItem;
 import demo.event.UpdateItem;
+import demo.lib.KafkaClient;
+import demo.properties.DemoProperties;
 import demo.repository.ItemRepository;
 import demo.util.TestEntityData;
 import demo.util.TestEventData;
@@ -15,7 +17,6 @@ import org.junit.jupiter.api.Test;
 
 import static java.util.UUID.randomUUID;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -25,11 +26,15 @@ public class ItemServiceTest {
 
     private ItemService service;
     private ItemRepository itemRepositoryMock;
+    private KafkaClient kafkaClientMock;
+    private DemoProperties demoPropertiesMock;
 
     @BeforeEach
     public void setUp() {
         itemRepositoryMock = mock(ItemRepository.class);
-        service = new ItemService(itemRepositoryMock);
+        kafkaClientMock = mock(KafkaClient.class);
+        demoPropertiesMock = mock(DemoProperties.class);
+        service = new ItemService(itemRepositoryMock, demoPropertiesMock, kafkaClientMock);
     }
 
     @Test
@@ -48,10 +53,10 @@ public class ItemServiceTest {
         Item item = TestEntityData.buildItem(itemId, "my-item");
         when(itemRepositoryMock.findById(itemId)).thenReturn(Optional.of(item));
 
-        UpdateItem testEvent = TestEventData.buildUpdateItemEvent(itemId, ItemStatus.ACTIVE.toString());
+        UpdateItem testEvent = TestEventData.buildUpdateItemEvent(itemId, ItemStatus.ACTIVE);
 
-        service.updateItem(testEvent);
+        service.updateItem(testEvent, 1L, 1L);
 
-        verify(itemRepositoryMock, times(1)).save(argThat(s -> s.getStatus().equals(ItemStatus.ACTIVE.toString())));
+        verify(itemRepositoryMock, times(1)).save(argThat(s -> s.getStatus().equals(ItemStatus.ACTIVE)));
     }
 }
