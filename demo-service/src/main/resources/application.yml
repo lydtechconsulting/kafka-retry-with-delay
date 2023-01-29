@@ -30,7 +30,9 @@ demo:
     topics:
         itemCreateTopic: "create-item"
         itemUpdateTopic: "update-item"
-        retryTopic: "messaging-retry"
-    retry:
+
+retry:
+    messaging:
+        topic: "messaging-retry"
         retryIntervalSeconds: 10
         maxRetryDurationSeconds: 300

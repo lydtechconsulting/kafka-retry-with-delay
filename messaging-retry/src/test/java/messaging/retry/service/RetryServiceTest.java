@@ -1,4 +1,4 @@
-package messaging.retry.handler;
+package messaging.retry.service;
 
 import java.time.Instant;
 import java.util.Map;
@@ -15,9 +15,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
-public class RetryHandlerTest {
+public class RetryServiceTest {
 
-    private RetryHandler handler;
+    private RetryService handler;
     private MessagingRetryKafkaClient kafkaClientMock;
 
     @BeforeEach
@@ -25,7 +25,7 @@ public class RetryHandlerTest {
         kafkaClientMock = mock(MessagingRetryKafkaClient.class);
         final Long retryIntervalSeconds = 10L;
         final Long maxRetryDurationSeconds = 30L;
-        handler = new RetryHandler(kafkaClientMock, retryIntervalSeconds, maxRetryDurationSeconds);
+        handler = new RetryService(kafkaClientMock, "retry-topic", retryIntervalSeconds, maxRetryDurationSeconds);
     }
 
     /**

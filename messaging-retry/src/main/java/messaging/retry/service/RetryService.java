@@ -1,4 +1,4 @@
-package messaging.retry.handler;
+package messaging.retry.service;
 
 import java.time.Instant;
 import java.util.Map;
@@ -9,13 +9,22 @@ import messaging.retry.lib.MessagingRetryHeaders;
 import messaging.retry.lib.MessagingRetryKafkaClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.stereotype.Service;
 
-@Component
+import static org.springframework.kafka.support.KafkaHeaders.RECEIVED_TIMESTAMP;
+import static org.springframework.kafka.support.KafkaHeaders.RECEIVED_TOPIC;
+
+@Service
 @Slf4j
-public class RetryHandler {
+public class RetryService {
 
     private final MessagingRetryKafkaClient kafkaClient;
+
+    /**
+     * The retry topic to send events for delayed retry.
+     */
+    private final String retryTopic;
 
     /**
      * The interval that must have passed since the last retry before the event is to be retried again.
@@ -27,12 +36,34 @@ public class RetryHandler {
      */
     private final Long maxRetryDurationSeconds;
 
-    public RetryHandler(@Autowired MessagingRetryKafkaClient kafkaClient,
-                        @Value("${demo.retry.retryIntervalSeconds}") Long retryIntervalSeconds,
-                        @Value("${demo.retry.maxRetryDurationSeconds}") Long maxRetryDurationSeconds) {
+    public RetryService(@Autowired MessagingRetryKafkaClient kafkaClient,
+                        @Value("${retry.messaging.topic}") String retryTopic,
+                        @Value("${retry.messaging.retryIntervalSeconds}") Long retryIntervalSeconds,
+                        @Value("${retry.messaging.maxRetryDurationSeconds}") Long maxRetryDurationSeconds) {
         this.kafkaClient = kafkaClient;
+        this.retryTopic = retryTopic;
         this.retryIntervalSeconds = retryIntervalSeconds;
         this.maxRetryDurationSeconds = maxRetryDurationSeconds;
+    }
+
+    /**
+     * Sends the event to the retry topic for delayed retry.
+     *
+     * The message headers should be the original headers from the original event received.  These will include the
+     * received timestamp and received topic, which are required for the retry processing.  If the event is retried
+     * multiple times they will also include the original received timestamp which is added by the retry service.
+     *
+     * If the original received timestamp is not set, it is the first time this event has been received.  i.e.
+     * it has not yet been retried.  So set the original received timestamp to the received timestamp and pass
+     * this as a header on the event.  Also set the topic this event was received from as a header so the retry logic
+     * knows which topic to send the event back to when it is ready to retry.
+     */
+    public void retry(final String payload, final MessageHeaders headers) {
+        final Long verifiedOriginalReceivedTimestamp = headers.get(MessagingRetryHeaders.ORIGINAL_RECEIVED_TIMESTAMP) != null ?
+                (Long)headers.get(MessagingRetryHeaders.ORIGINAL_RECEIVED_TIMESTAMP) : (Long)headers.get(RECEIVED_TIMESTAMP);
+        kafkaClient.sendMessage(retryTopic, payload,
+                Map.of(MessagingRetryHeaders.ORIGINAL_RECEIVED_TIMESTAMP, verifiedOriginalReceivedTimestamp,
+                        MessagingRetryHeaders.ORIGINAL_RECEIVED_TOPIC, headers.get(RECEIVED_TOPIC)));
     }
 
     public void handle(final String payload, final Long receivedTimestamp, final Long originalReceivedTimestamp, final String originalTopic) {

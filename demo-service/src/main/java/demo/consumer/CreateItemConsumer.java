@@ -1,7 +1,5 @@
 package demo.consumer;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import demo.event.CreateItem;
 import demo.mapper.JsonMapper;
 import demo.service.ItemService;
@@ -15,19 +13,16 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @Component
 public class CreateItemConsumer {
-
-    final AtomicInteger counter = new AtomicInteger();
     final ItemService itemService;
 
     @KafkaListener(topics = "create-item", containerFactory = "kafkaListenerContainerFactory")
     public void listen(@Payload final String payload) {
-        counter.getAndIncrement();
-        log.info("Create Item Consumer: Received message [" +counter.get()+ "] - payload: " + payload);
+        log.info("Create Item Consumer: Received message with payload: " + payload);
         try {
             CreateItem event = JsonMapper.readFromJson(payload, CreateItem.class);
             itemService.createItem(event);
         } catch (Exception e) {
-            log.error("Error processing message: " + e.getMessage());
+            log.error("Create item - error processing message: " + e.getMessage());
         }
     }
 }

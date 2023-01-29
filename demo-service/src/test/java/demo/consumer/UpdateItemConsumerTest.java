@@ -1,5 +1,7 @@
 package demo.consumer;
 
+import java.util.Map;
+
 import demo.event.UpdateItem;
 import demo.mapper.JsonMapper;
 import demo.service.ItemService;
@@ -7,6 +9,7 @@ import demo.service.ItemStatus;
 import demo.util.TestEventData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.messaging.MessageHeaders;
 
 import static java.util.UUID.randomUUID;
 import static org.mockito.Mockito.doThrow;
@@ -18,6 +21,7 @@ public class UpdateItemConsumerTest {
 
     private ItemService serviceMock;
     private UpdateItemConsumer consumer;
+    private MessageHeaders headers = new MessageHeaders(Map.of("some-header", "some-value"));
 
     @BeforeEach
     public void setUp() {
@@ -33,9 +37,9 @@ public class UpdateItemConsumerTest {
         UpdateItem testEvent = TestEventData.buildUpdateItemEvent(randomUUID(), ItemStatus.ACTIVE);
         String payload = JsonMapper.writeToJson(testEvent);
 
-        consumer.listen(payload, 1L, 1L);
+        consumer.listen(payload, headers);
 
-        verify(serviceMock, times(1)).updateItem(testEvent, 1L, 1L);
+        verify(serviceMock, times(1)).updateItem(testEvent, headers);
     }
 
     /**
@@ -48,10 +52,10 @@ public class UpdateItemConsumerTest {
         UpdateItem testEvent = TestEventData.buildUpdateItemEvent(randomUUID(), ItemStatus.ACTIVE);
         String payload = JsonMapper.writeToJson(testEvent);
 
-        doThrow(new RuntimeException("Service failure")).when(serviceMock).updateItem(testEvent, 1L, 1L);
+        doThrow(new RuntimeException("Service failure")).when(serviceMock).updateItem(testEvent, headers);
 
-        consumer.listen(payload, 1L, 1L);
+        consumer.listen(payload, headers);
 
-        verify(serviceMock, times(1)).updateItem(testEvent, 1L, 1L);
+        verify(serviceMock, times(1)).updateItem(testEvent, headers);
     }
 }

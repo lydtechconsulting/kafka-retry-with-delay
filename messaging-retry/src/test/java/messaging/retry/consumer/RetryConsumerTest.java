@@ -1,7 +1,7 @@
 package messaging.retry.consumer;
 
 import messaging.retry.exception.RetryableMessagingException;
-import messaging.retry.handler.RetryHandler;
+import messaging.retry.service.RetryService;
 import messaging.retry.util.TestEventData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,13 +16,13 @@ import static org.mockito.Mockito.verify;
 
 public class RetryConsumerTest {
 
-    private RetryHandler retryHandlerMock;
+    private RetryService retryHandlerMock;
     private RetryConsumer consumer;
 
     @BeforeEach
     public void setUp() {
-        retryHandlerMock = mock(RetryHandler.class);
-        consumer = new RetryConsumer(retryHandlerMock);
+        retryHandlerMock = mock(RetryService.class);
+        consumer = new RetryConsumer(retryHandlerMock, "messaging-retry");
     }
 
     /**

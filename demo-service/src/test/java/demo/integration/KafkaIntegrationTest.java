@@ -23,7 +23,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
+import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
+import org.springframework.kafka.test.utils.ContainerTestUtils;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -35,7 +38,7 @@ import static org.hamcrest.Matchers.equalTo;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = { DemoConfiguration.class } )
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ActiveProfiles("test")
-@EmbeddedKafka(controlledShutdown = true, topics = { "create-item", "update-item-status" })
+@EmbeddedKafka(controlledShutdown = true, topics = { "create-item", "update-item" })
 public class KafkaIntegrationTest {
 
     final static String CREATE_ITEM_TOPIC = "create-item";
@@ -43,6 +46,12 @@ public class KafkaIntegrationTest {
 
     @Autowired
     private KafkaClientTest kafkaClient;
+
+    @Autowired
+    private EmbeddedKafkaBroker embeddedKafkaBroker;
+
+    @Autowired
+    private KafkaListenerEndpointRegistry registry;
 
     @Autowired
     private ItemRepository itemRepository;
@@ -53,6 +62,10 @@ public class KafkaIntegrationTest {
     @BeforeEach
     public void setUp() {
         itemRepository.deleteAll();
+
+        // Wait until the partitions are assigned.
+        registry.getListenerContainers().stream().forEach(container ->
+                ContainerTestUtils.waitForAssignment(container, embeddedKafkaBroker.getPartitionsPerTopic()));
     }
 
     /**
