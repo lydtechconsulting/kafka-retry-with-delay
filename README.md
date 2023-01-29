@@ -8,16 +8,20 @@ By passing the event off to a retry topic it means that other events on the same
 
 The pattern allows a delay to be configured so that the events are not being continually retried, using up processing time and resources.  As the event can be retried many times, after a configurable period of time it will be discarded.  This ensures that it is not being retried forever (a poison pill), even if the application never moves to a state where it can process it.  When the retry evaluation determines that the event should be retried it is simply added back onto the original topic, so it will be re-consumed and the update will be attempted as before (which could result in another retry).  This ensures that the retry handling logic is encapsulated, has a single concern (the retry evaluation), having no knowledge of what the event is or the business logic required to process it.
 
-For example, as this application demonstrates, an item is created with a create-item event, and updated with an update-item event.  If the update-item event is received before the create-item event it may be required to delay and retry this update after a period of time to allow for the corresponding create-item event to arrive and be processed.  When related events are originating in bulk from external systems it may well be the case that such events arrive out of order by the time they hit a downstream service.  This pattern therefore caters for such a scenario as the update-item event can be safely retried until the item is eventually created by the create-item event, at which point the update can be applied.
+For example, as this application demonstrates, an item is created with a `create-item` event, and updated with an `update-item` event.  If the `update-item` event is received before the `create-item` event it may be required to delay and retry this update after a period of time to allow for the corresponding `create-item` event to arrive and be processed.  When related events are originating in bulk from external systems it may well be the case that such events arrive out of order by the time they hit a downstream service.  This pattern therefore caters for such a scenario as the `update-item` event can be safely retried until the item is eventually created by the `create-item` event, at which point the update can be applied.
 
-The retry logic is generic and works with any event.  As such it is encapsulated in its own library, `messaging-retry`.  Adding this dependency to a project to enable application of this delayed non-blocking retry pattern.  If it is determined that the event should be retried, then place on the `retry-message` topic, with the following headers configured:
+The retry logic is generic and works with any event.  As such it is encapsulated in its own library, `messaging-retry`.  Adding this dependency to a project enables application of this delayed non-blocking retry pattern.  If it is determined that the event should be retried, then call the `RetryService.retry(..)` method, passing the event and the original headers.  The original headers include the timestamp the event was received, and the topic the event was received on.  Based on these the retry service will add the following headers to the message that it sends to its retry topic: 
 
 |Header|Value|
 |---|---|
 |messaging.retry.lib.MessagingRetryHeaders.ORIGINAL_RECEIVED_TIMESTAMP|This is the original received timestamp of the event, taken from the `org.springframework.kafka.support.KafkaHeaders.RECEIVED_TIMESTAMP` header.|
-|messaging.retry.lib.MessagingRetryHeaders.ORIGINAL_TOPIC|The original topic name of the message.  When the message is ready to retry, this is the topic that the message will be placed on.|
+|messaging.retry.lib.MessagingRetryHeaders.ORIGINAL_TOPIC|The original topic name of the message, taken from the `org.springframework.kafka.support.KafkaHeaders.RECEIVED_TOPIC` header.  When the message is ready to retry, this is the topic that the message will be placed on.|
 
-The consumer on the original topic for the event that needs to be retried therefore needs to pass on the `ORIGINAL_RECEIVED_TIMESTAMP` header to the retry topic if it is set, and if it is not set then set this header to the event's `KafkaHeaders.RECEIVED_TIMESTAMP`.  (`KafkaHeaders.RECEIVED_TIMESTAMP` is always set on an event when written by a Spring producer).   When the retry handler writes the event back to the original topic, it will include the `MessagingRetryHeaders.ORIGINAL_RECEIVED_TIMESTAMP` header.
+Note that `KafkaHeaders.RECEIVED_TIMESTAMP` and `KafkaHeaders.RECEIVED_TOPIC` are always set on an event when written by a Spring producer.
+
+Once the event is written to and received from the retry topic (as defined in `retry.messaging.topic` in `application.yml`), it will evaluate whether the event should be discarded or retried.  The evaluation consists of first determining whether the event has exceeded the max retry duration (as configured in `retry.messaging.maxRetryDurationSeconds` in `application.yml`), and if so logging an error.  If not, it evaluates whether sufficient time has passed that a retry should be attempted (based on the `retry.messaging.retryIntervalSeconds` interval).  If so the event is placed back on the original topic.  Otherwise a RetryableMessagingException is thrown, ensuring the event is re-polled from retry topic and evaluated again until one of the two conditions are met (discard or retry on original topic). 
+
+To retry the event, the retry handler sends it back to the original topic.  When this happens it decorates the event with the `MessagingRetryHeaders.ORIGINAL_RECEIVED_TIMESTAMP` header, which is used if a further retry is required.
 
 Events that are retried will therefore potentially be applied out of order.  For example, if two `update-item` events are received before the corresponding `create-item` event, with one transitioning the item to status `ACTIVE` and the second transitioning the item to `CANCELLED`, as these events are retried they will be applied in a non-deterministic order.  This may be contrary to the requirements of the system. 
 
@@ -27,8 +31,9 @@ Configure the following properties in `src/main/resources/application.yml`:
 
 |Property|Usage|Default|
 |---|---|---|
-|demo.retry.retryIntervalSeconds| The interval in seconds between retries| 10 seconds|
-|demo.retry.maxRetryDurationSeconds| The maximum duration an event should be retried before being discarded|300 seconds|
+|retry.messaging.topic| The retry topic that events are sent to for evaluating retry|
+|retry.messaging.retryIntervalSeconds| The interval in seconds between retries| 10 seconds|
+|retry.messaging.maxRetryDurationSeconds| The maximum duration an event should be retried before being discarded|300 seconds|
 
 ## Build
 ```
