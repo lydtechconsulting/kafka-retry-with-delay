@@ -15,7 +15,7 @@ The retry logic is generic and works with any event.  As such it is encapsulated
 <dependency>
     <groupId>demo</groupId>
     <artifactId>messaging-retry</artifactId>
-    <version>${project.version}</version>
+    <version>1.0.0</version>
 </dependency>
 ```
 If it is determined that the event should be retried, then call the `RetryService.retry(..)` method, passing the event and the original headers.  The original headers include the timestamp the event was received, and the topic the event was received on.  Based on these the retry service will add the following headers to the message that it sends to its retry topic: 
