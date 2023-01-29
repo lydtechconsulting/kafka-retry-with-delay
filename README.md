@@ -18,7 +18,7 @@ The retry logic is generic and works with any event.  As such it is encapsulated
     <version>1.0.0</version>
 </dependency>
 ```
-If it is determined that the event should be retried, then call the `RetryService.retry(..)` method, passing the event and the original headers.  The original headers include the timestamp the event was received, and the topic the event was received on.  Based on these the retry service will add the following headers to the message that it sends to its retry topic: 
+If it is determined that the event should be retried, then call the `RetryService.retry(..)` method, passing the event and the original headers.  `RetryService` is a Spring Bean so can be autowired into the application.  The original headers include the timestamp the event was received, and the topic the event was received on.  Based on these the retry service will add the following headers to the message that it sends to its retry topic: 
 
 |Header|Value|
 |---|---|
@@ -27,7 +27,7 @@ If it is determined that the event should be retried, then call the `RetryServic
 
 Note that `KafkaHeaders.RECEIVED_TIMESTAMP` and `KafkaHeaders.RECEIVED_TOPIC` are always set on an event when written by a Spring producer.
 
-Once the event is written to and received from the retry topic (as defined in `retry.messaging.topic` in `application.yml`), it will evaluate whether the event should be discarded or retried.  The evaluation consists of first determining whether the event has exceeded the max retry duration (as configured in `retry.messaging.maxRetryDurationSeconds` in `application.yml`), and if so logging an error.  If not, it evaluates whether sufficient time has passed that a retry should be attempted (based on the `retry.messaging.retryIntervalSeconds` interval).  If so the event is placed back on the original topic.  Otherwise a RetryableMessagingException is thrown, ensuring the event is re-polled from retry topic and evaluated again until one of the two conditions are met (discard or retry on original topic). 
+Once the event is written to and received from the retry topic (the topic being defined in `retry.messaging.topic` in `application.yml`), it will evaluate whether the event should be discarded or retried.  The evaluation consists of first determining whether the event has exceeded the max retry duration (as configured in `retry.messaging.maxRetryDurationSeconds` in `application.yml`), and if so logging an error.  If not, it evaluates whether sufficient time has passed that a retry should be attempted (based on the `retry.messaging.retryIntervalSeconds` configuration).  If so the event is placed back on the original topic.  Otherwise a RetryableMessagingException is thrown, ensuring the event is re-polled from the retry topic and evaluated again until one of the two conditions are met (discard or retry on original topic). 
 
 To retry the event, the retry handler sends it back to the original topic.  When this happens it decorates the event with the `MessagingRetryHeaders.ORIGINAL_RECEIVED_TIMESTAMP` header, which is used if a further retry is required.
 
@@ -39,8 +39,8 @@ Configure the following properties in `src/main/resources/application.yml`:
 
 |Property|Usage|Default|
 |---|---|---|
-|retry.messaging.topic| The retry topic that events are sent to for evaluating retry|
-|retry.messaging.retryIntervalSeconds| The interval in seconds between retries| 10 seconds|
+|retry.messaging.topic| The retry topic that events are sent to for evaluating retry|messaging-retry|
+|retry.messaging.retryIntervalSeconds| The interval in seconds between retries|10 seconds|
 |retry.messaging.maxRetryDurationSeconds| The maximum duration an event should be retried before being discarded|300 seconds|
 
 ## Build
