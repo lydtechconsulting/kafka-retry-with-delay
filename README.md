@@ -10,7 +10,15 @@ The pattern allows a delay to be configured so that the events are not being con
 
 For example, as this application demonstrates, an item is created with a `create-item` event, and updated with an `update-item` event.  If the `update-item` event is received before the `create-item` event it may be required to delay and retry this update after a period of time to allow for the corresponding `create-item` event to arrive and be processed.  When related events are originating in bulk from external systems it may well be the case that such events arrive out of order by the time they hit a downstream service.  This pattern therefore caters for such a scenario as the `update-item` event can be safely retried until the item is eventually created by the `create-item` event, at which point the update can be applied.
 
-The retry logic is generic and works with any event.  As such it is encapsulated in its own library, `messaging-retry`.  Adding this dependency to a project enables application of this delayed non-blocking retry pattern.  If it is determined that the event should be retried, then call the `RetryService.retry(..)` method, passing the event and the original headers.  The original headers include the timestamp the event was received, and the topic the event was received on.  Based on these the retry service will add the following headers to the message that it sends to its retry topic: 
+The retry logic is generic and works with any event.  As such it is encapsulated in its own library, `messaging-retry`.  Adding this dependency to a project enables application of this delayed non-blocking retry pattern.  
+```
+<dependency>
+    <groupId>demo</groupId>
+    <artifactId>messaging-retry</artifactId>
+    <version>${project.version}</version>
+</dependency>
+```
+If it is determined that the event should be retried, then call the `RetryService.retry(..)` method, passing the event and the original headers.  The original headers include the timestamp the event was received, and the topic the event was received on.  Based on these the retry service will add the following headers to the message that it sends to its retry topic: 
 
 |Header|Value|
 |---|---|
