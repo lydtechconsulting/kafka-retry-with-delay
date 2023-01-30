@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 import demo.DemoConfiguration;
 import demo.event.CreateItem;
 import demo.event.UpdateItem;
-import demo.lib.KafkaClientTest;
+import demo.lib.KafkaClient;
 import demo.mapper.JsonMapper;
 import demo.repository.ItemRepository;
 import demo.service.ItemStatus;
@@ -45,7 +45,7 @@ public class KafkaIntegrationTest {
     final static String UPDATE_ITEM_TOPIC = "update-item";
 
     @Autowired
-    private KafkaClientTest kafkaClient;
+    private KafkaClient kafkaClient;
 
     @Autowired
     private EmbeddedKafkaBroker embeddedKafkaBroker;

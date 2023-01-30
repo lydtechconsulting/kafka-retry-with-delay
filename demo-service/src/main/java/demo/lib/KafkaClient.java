@@ -20,12 +20,18 @@ public class KafkaClient {
     @Autowired
     private final KafkaTemplate kafkaTemplate;
 
+    public SendResult sendMessage(final String topic, final String data) {
+        return this.sendMessage(topic, data, null);
+    }
+
     public SendResult sendMessage(final String topic, final String data, final Map<String, Object> headers) {
         try {
             final MessageBuilder builder = MessageBuilder
                     .withPayload(data)
                     .setHeader(KafkaHeaders.TOPIC, topic);
-            headers.forEach((key, value) -> builder.setHeader(key, value));
+            if(headers!=null) {
+                headers.forEach((key, value) -> builder.setHeader(key, value));
+            }
             final Message<String> message = builder.build();
             return (SendResult)kafkaTemplate.send(message).get();
         } catch (Exception e) {
