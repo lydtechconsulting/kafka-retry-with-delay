@@ -52,7 +52,7 @@ mvn clean install
 
 The integration tests run as part of the maven `test` target (which is part of the `install`).
 
-Configuration for the test is taken from the `src/test/resoures/application-test.yml`.
+Configuration for the test is taken from the `src/test/resources/application-test.yml`.
 
 The tests demonstrate sending events to an embedded in-memory Kafka that are consumed by the application.  `create-item` events result in an item being persisted in the database.  `update-item` events update the corresponding item if it is present in the database.  The tests demonstrate that if the item is not found it is retried via the retry topic.
 
