@@ -60,7 +60,7 @@ The tests demonstrate sending events to an embedded in-memory Kafka that are con
 
 ### Run docker containers
 
-From root dir run the following to start dockerised Kafka, Zookeeper, and Confluent Control Center:
+From root dir run the following to start dockerised Kafka, Zookeeper, and Conduktor Platform:
 ```
 docker-compose up -d
 ```
@@ -113,6 +113,10 @@ curl -X GET http://localhost:9001/v1/demo/items/626bd1bd-c565-48ac-87b2-28f2247f
 ### Exercise the retry with out of order events
 
 Submit an `update-item` first (with a different UUID, and status of `ACTIVE` or `CANCELLED`).  Observe that no item status is returned from the `curl` statement.  If a `create-item` event with this same itemId is submitted before the `maxRetryDurationSeconds` threshold is exceeded (as defined in `application.yml`), then the item will be created, and the retrying `update-item` event will transition the status to `ACTIVE` or `CANCELLED`.  If the threshold is exceeded then the status of the created item will remain at `NEW`.
+
+### View the retry topics and events in Conduktor:
+
+Log in to Conduktor at `http://localhost:8080` with credentials: `admin@conduktor.io` / `admin`
 
 ### Docker clean up
 

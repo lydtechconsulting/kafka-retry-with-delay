@@ -29,6 +29,18 @@ services:
             KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
             KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR:
 
+    conduktor-platform:
+        image: conduktor/conduktor-platform:1.4.0
+        ports:
+            - 8080:8080
+        depends_on:
+            - kafka
+        environment:
+            KAFKA_BOOTSTRAP_SERVER: kafka:29092
+            ORGANISATION_NAME: "default"
+            ADMIN_EMAIL: "admin@conduktor.io"
+            ADMIN_PSW: "admin"
+
     postgres:
         container_name: postgres
         image: postgres:14.1-alpine
