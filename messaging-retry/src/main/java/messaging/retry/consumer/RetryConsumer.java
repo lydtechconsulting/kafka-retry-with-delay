@@ -19,15 +19,12 @@ import static messaging.retry.lib.MessagingRetryHeaders.ORIGINAL_RECEIVED_TOPIC;
 public class RetryConsumer {
 
     private final RetryService retryHandler;
-    public final String messagingRetryTopic;
 
-    public RetryConsumer(@Autowired RetryService retryHandler,
-                         @Value("${retry.messaging.topic}") String messagingRetryTopic) {
+    public RetryConsumer(@Autowired RetryService retryHandler) {
         this.retryHandler = retryHandler;
-        this.messagingRetryTopic = messagingRetryTopic;
     }
 
-    @KafkaListener(topics = "#{retryConsumer.messagingRetryTopic}", containerFactory = "kafkaListenerRetryContainerFactory")
+    @KafkaListener(topics = "#{'${retry.messaging.topic}'}", containerFactory = "kafkaListenerRetryContainerFactory")
     public void listen(@Payload final String payload,
                        @Header(KafkaHeaders.RECEIVED_TIMESTAMP) final Long receivedTimestamp,
                        @Header(value = ORIGINAL_RECEIVED_TIMESTAMP, required = false) final Long originalReceivedTimestamp,

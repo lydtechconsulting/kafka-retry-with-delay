@@ -22,7 +22,7 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
-import org.springframework.kafka.listener.SeekToCurrentErrorHandler;
+import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.util.backoff.FixedBackOff;
 
 @Slf4j
@@ -42,13 +42,13 @@ public class DemoConfiguration {
 
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerRetryContainerFactory(final ConsumerFactory<String, String> consumerFactory) {
-        final SeekToCurrentErrorHandler errorHandler = new SeekToCurrentErrorHandler((record, exception) -> {
+        final DefaultErrorHandler errorHandler = new DefaultErrorHandler((record, exception) -> {
             // 1 second pause, unlimited retries - allow the discard logic to deal with the limit.
         }, new FixedBackOff(1000L, FixedBackOff.UNLIMITED_ATTEMPTS));
 
         final ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory();
         factory.setConsumerFactory(consumerFactory);
-        factory.setErrorHandler(errorHandler);
+        factory.setCommonErrorHandler(errorHandler);
         return factory;
     }
 

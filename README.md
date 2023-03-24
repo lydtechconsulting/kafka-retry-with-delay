@@ -44,6 +44,9 @@ Configure the following properties in `src/main/resources/application.yml`:
 |retry.messaging.maxRetryDurationSeconds| The maximum duration an event should be retried before being discarded|300 seconds|
 
 ## Build
+
+Build with Java 17.
+
 ```
 mvn clean install
 ```

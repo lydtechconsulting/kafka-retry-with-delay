@@ -22,7 +22,7 @@ public class RetryConsumerTest {
     @BeforeEach
     public void setUp() {
         retryHandlerMock = mock(RetryService.class);
-        consumer = new RetryConsumer(retryHandlerMock, "messaging-retry");
+        consumer = new RetryConsumer(retryHandlerMock);
     }
 
     /**
