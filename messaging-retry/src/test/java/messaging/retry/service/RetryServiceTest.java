@@ -51,7 +51,7 @@ public class RetryServiceTest {
      * As the event was last retried 11 seconds, it should now be retried by sending to Kafka.
      */
     @Test
-    public void testHandle_shouldRetryUpdate() {
+    public void testHandle_shouldRetry() {
         Long receivedTimestamp = Instant.now().minusSeconds(11).toEpochMilli();
         Long originalReceivedTimestamp = Instant.now().minusSeconds(29).toEpochMilli();
         handler.handle("my-payload", receivedTimestamp, originalReceivedTimestamp, "my-topic");

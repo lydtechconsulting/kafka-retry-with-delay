@@ -69,7 +69,7 @@ public class RetryService {
     public void handle(final String payload, final Long receivedTimestamp, final Long originalReceivedTimestamp, final String originalTopic) {
         if(shouldDiscard(originalReceivedTimestamp)) {
             log.debug("Item {} has exceeded total retry duration - item discarded.", payload);
-        } else if(shouldRetryUpdate(receivedTimestamp)) {
+        } else if(shouldRetry(receivedTimestamp)) {
             log.debug("Item {} is ready to retry - sending to update-item topic.", payload);
             kafkaClient.sendMessage(originalTopic, payload,
                     Map.of(MessagingRetryHeaders.ORIGINAL_RECEIVED_TIMESTAMP, originalReceivedTimestamp));
@@ -110,7 +110,7 @@ public class RetryService {
      * If current time is 10.13, then retry (by sending back to update-item topic).
      * i.e. current time > (receipt time + retry interval) so retry
      */
-    private boolean shouldRetryUpdate(final Long receivedTimestamp) {
+    private boolean shouldRetry(final Long receivedTimestamp) {
         long timeForNextRetry = receivedTimestamp + (retryIntervalSeconds * 1000);
         log.debug("retryIntervalSeconds: {} - receivedTimestamp: {} - timeForNextRetry: {} - now: {} - (now > timeForNextRetry): {}", retryIntervalSeconds, receivedTimestamp, timeForNextRetry, Instant.now().toEpochMilli(), Instant.now().toEpochMilli() > timeForNextRetry);
         return Instant.now().toEpochMilli() > timeForNextRetry;
