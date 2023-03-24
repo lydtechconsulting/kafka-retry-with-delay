@@ -45,7 +45,7 @@ Configure the following properties in `src/main/resources/application.yml`:
 
 ## Build
 
-Build with Java 17.
+Build with Java 17:
 
 ```
 mvn clean install
